@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Remove debug info">
+    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Use requests &quot;params&quot; argument instead of manually constructing URL">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -80,13 +80,22 @@
       <option name="project" value="LOCAL" />
       <updated>1745935521194</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Use requests &quot;params&quot; argument instead of manually constructing URL">
+      <option name="closed" value="true" />
+      <created>1745936722355</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1745936722355</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial commit" />
     <MESSAGE value="Add exception handler" />
     <MESSAGE value="Remove debug info" />
-    <option name="LAST_COMMIT_MESSAGE" value="Remove debug info" />
+    <MESSAGE value="Use requests &quot;params&quot; argument instead of manually constructing URL" />
+    <option name="LAST_COMMIT_MESSAGE" value="Use requests &quot;params&quot; argument instead of manually constructing URL" />
   </component>
 </project>

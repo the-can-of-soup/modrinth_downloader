@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Callable
 import traceback
 import requests
 import json
@@ -14,14 +15,17 @@ import time
 #
 # Project Type
 #     "mod", "resourcepack" OR "rp", "datapack" OR "dp", "modpack" OR "mp", "plugin", "shader"
+#     NOTE: Project Types cannot be excluded with "-"
 # Loader
-#     "bukkit", "bungeecord", "fabric", "folia", "forge", "neoforge", "paper",
-#     "purpur", "quilt", "spigot", "velocity", "waterfall"
+#     Examples: "forge", "fabric", "neoforge", "quilt", "paper", "iris"
+#     NOTE: Loaders cannot be excluded with "-"
 # Platform
-#     "server", "client", "serverrequired", "clientrequired"
+#     "server" OR "serverside", "client" OR "clientside", "serversupported", "clientsupported"
 # Version
 #     Use the letter "v" and then the Minecraft version. Examples: "v1.20.1", "v23w14a_or_b"
 #     NOTE: Versions cannot be excluded with "-"
+# Tag
+#     Use the letter "t" and then the tag. Examples: "tsocial", "tadventure", "tcursed", "t16x"
 #
 # The search will return projects that match ANY of the "+" attributes AND NONE of the "-" attributes
 # for EACH FACET.
@@ -33,16 +37,55 @@ import time
 # Note that "+mod", "+rp", "-dp", and "-mp" get lumped together because they are all part of the "Project
 # Type" facet. "+forge" and "-quilt" also are in their own "Loader" facet and so get handled separately.
 #
-# The query "trajectory -serverrequired +neoforge +mod +v1.21.1" will search for NeoForge mods for 1.21.1
-# that do not require a server (meaning they are client-side) with the word "trajectory".
+# The query "trajectory -serversupported +neoforge +mod +v1.21.1" will search for NeoForge mods for 1.21.1
+# that do not support a server version with the word "trajectory".
 #
 # The query "teleport +server" will search for projects that support a server-side version with the
 # word "teleport".
 
+# CONSTANTS
+
 SEARCH_URL: str = 'https://api.modrinth.com/v2/search'
 PAGE_SIZE: int = 20
-LOADERS: list[str] = ['bukkit', 'bungeecord', 'fabric', 'folia', 'forge', 'neoforge', 'paper',
-                      'purpur', 'quilt', 'spigot', 'velocity', 'waterfall']
+LOADERS: list[str] = ['bukkit', 'bungeecord', 'canvas', 'fabric', 'folia', 'forge', 'iris', 'liteloader', 'modloader',
+                      'neoforge', 'optifine', 'paper', 'purpur', 'quilt', 'rift', 'spigot', 'sponge', 'vanilla', # "vanilla" is for shaders
+                      'velocity', 'waterfall']
+ATTRIBUTES: dict[str, str] = {
+    '+mod': 'project_type:mod',
+    '+resourcepack': 'project_type:resourcepack',
+    '+rp': 'project_type:resourcepack',
+    '+datapack': 'project_type:datapack',
+    '+dp': 'project_type:datapack',
+    '+modpack': 'project_type:modpack',
+    '+mp': 'project_type:modpack',
+    '+plugin': 'project_type:plugin',
+    '+shader': 'project_type:shader',
+    **{f'+{loader}': f'categories:{loader}' for loader in LOADERS},
+    '+server': 'client_side!=required',
+    '-server': 'client_side:required',
+    '+client': 'server_side!=required',
+    '-client': 'server_side:required',
+    '+serverside': 'client_side!=required',
+    '-serverside': 'client_side:required',
+    '+clientside': 'server_side!=required',
+    '-clientside': 'server_side:required',
+    '+serversupported': 'server_side!=unsupported',
+    '-serversupported': 'server_side:unsupported',
+    '+clientsupported': 'client_side!=unsupported',
+    '-clientsupported': 'client_side:unsupported'
+}
+SPECIAL_ATTRIBUTES: dict[str, Callable[[str], str]] = {
+    '+v': lambda version: f'versions:{version}',
+    '+t': lambda tag: f'categories:{tag}',
+    '-t': lambda tag: f'categories!={tag}'
+}
+FACETS: list[list[str]] = [
+    ['mod', 'resourcepack', 'rp', 'datapack', 'dp', 'modpack', 'mp', 'plugin', 'shader'],
+    LOADERS,
+    ['server', 'client', 'serverside', 'clientside', 'serversupported', 'clientsupported'],
+]
+
+# CLASS & FUNCTION DEFINITIONS
 
 def truncate(text: str, width: int = 20, add_whitespace: bool = True) -> str:
     if len(text) <= width:
@@ -166,6 +209,8 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 
     except:
         return SearchResultsError(traceback.format_exc())
+
+# MAIN
 
 if __name__ == '__main__':
     # TEST
