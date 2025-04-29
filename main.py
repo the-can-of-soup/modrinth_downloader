@@ -39,9 +39,10 @@ import time
 # The query "teleport +server" will search for projects that support a server-side version with the
 # word "teleport".
 
+SEARCH_URL: str = 'https://api.modrinth.com/v2/search'
+PAGE_SIZE: int = 20
 LOADERS: list[str] = ['bukkit', 'bungeecord', 'fabric', 'folia', 'forge', 'neoforge', 'paper',
                       'purpur', 'quilt', 'spigot', 'velocity', 'waterfall']
-PAGE_SIZE: int = 20
 
 def truncate(text: str, width: int = 20, add_whitespace: bool = True) -> str:
     if len(text) <= width:
@@ -146,10 +147,12 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 
         # Format URL
         offset: int = page_number * PAGE_SIZE
-        url: str = f'https://api.modrinth.com/v2/search?query={search_term}&facets={json.dumps(facets)}&offset={offset}&limit={PAGE_SIZE}'
+        params: dict[str, str] = {'query': search_term, 'offset': offset, 'limit': PAGE_SIZE}
+        if len(facets) > 0:
+            params['facets'] = json.dumps(facets)
 
         # Send request and end timer
-        r: requests.Response = requests.get(url)
+        r: requests.Response = requests.get(SEARCH_URL, params=params)
         end_time: float = time.time()
         response_time: float = end_time - start_time
         data: dict = r.json()

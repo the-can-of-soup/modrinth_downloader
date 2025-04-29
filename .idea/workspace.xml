@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Initial commit">
+    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Remove debug info">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -64,11 +64,29 @@
       <option name="project" value="LOCAL" />
       <updated>1745891842786</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Add exception handler">
+      <option name="closed" value="true" />
+      <created>1745935447546</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1745935447546</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Remove debug info">
+      <option name="closed" value="true" />
+      <created>1745935521194</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1745935521194</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial commit" />
+    <MESSAGE value="Add exception handler" />
+    <MESSAGE value="Remove debug info" />
+    <option name="LAST_COMMIT_MESSAGE" value="Remove debug info" />
   </component>
 </project>
