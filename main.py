@@ -116,9 +116,8 @@ class SearchResults:
         print(f'Page {self.page_number+1}/{self.page_count} @ {PAGE_SIZE} items/page - {self.total_hits} results - Fetched in {int(self.response_time*1000):,}ms')
 
 class SearchResultsError:
-    def __init__(self, message: str, debug_info: str = ''):
+    def __init__(self, message: str):
         self.message: str = message
-        self.debug_info: str = debug_info
 
     def __repr__(self):
         return f'SearchResultsError({repr(self.message)})'
@@ -128,14 +127,9 @@ class SearchResultsError:
 
     def print(self) -> None:
         print(f'ERROR DURING SEARCH:\n')
-        if self.debug_info == '':
-            print(f'{"="*40}\nNo debug info.')
-        else:
-            print(f'{"="*40}\nDebug Info\n{self.debug_info}', end='')
         print(f'{"="*40}\n{self.message}{"="*40}')
 
 def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResultsError:
-    debug_info: str = ''
     # noinspection PyBroadException
     try:
         # Start timer
@@ -161,16 +155,14 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
         data: dict = r.json()
 
         # Return results
-        debug_info += f'Response JSON: {truncate(str(data), 300, False)}\n'
         projects: list[Project] = [Project.from_json(hit) for hit in data['hits']]
         total_hits: int = data['total_hits']
         page_count: int = math.ceil(total_hits / PAGE_SIZE)
         results: SearchResults = SearchResults(projects, page_number, page_count, total_hits, response_time)
-        debug_info += f'Search results: {results}\n'
         return results
 
     except:
-        return SearchResultsError(traceback.format_exc(), debug_info)
+        return SearchResultsError(traceback.format_exc())
 
 if __name__ == '__main__':
     # TEST
