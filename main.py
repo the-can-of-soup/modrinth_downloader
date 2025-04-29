@@ -1,4 +1,5 @@
 from __future__ import annotations
+import traceback
 import requests
 import json
 import math
@@ -115,8 +116,9 @@ class SearchResults:
         print(f'Page {self.page_number+1}/{self.page_count} @ {PAGE_SIZE} items/page - {self.total_hits} results - Fetched in {int(self.response_time*1000):,}ms')
 
 class SearchResultsError:
-    def __init__(self, message: str):
+    def __init__(self, message: str, debug_info: str = ''):
         self.message: str = message
+        self.debug_info: str = debug_info
 
     def __repr__(self):
         return f'SearchResultsError({repr(self.message)})'
@@ -125,10 +127,16 @@ class SearchResultsError:
         return f'Search error: {self.message}'
 
     def print(self) -> None:
-        print('ERROR DURING SEARCH:')
-        print(self.message)
+        print(f'ERROR DURING SEARCH:\n')
+        if self.debug_info == '':
+            print(f'{"="*40}\nNo debug info.')
+        else:
+            print(f'{"="*40}\nDebug Info\n{self.debug_info}', end='')
+        print(f'{"="*40}\n{self.message}{"="*40}')
 
 def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResultsError:
+    debug_info: str = ''
+    # noinspection PyBroadException
     try:
         # Start timer
         start_time: float = time.time()
@@ -140,6 +148,7 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 
         # Parse search filters from query
         facets: list[list[str]] = []
+        # TODO
 
         # Format URL
         offset: int = page_number * PAGE_SIZE
@@ -152,14 +161,16 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
         data: dict = r.json()
 
         # Return results
+        debug_info += f'Response JSON: {truncate(str(data), 300, False)}\n'
         projects: list[Project] = [Project.from_json(hit) for hit in data['hits']]
         total_hits: int = data['total_hits']
         page_count: int = math.ceil(total_hits / PAGE_SIZE)
         results: SearchResults = SearchResults(projects, page_number, page_count, total_hits, response_time)
+        debug_info += f'Search results: {results}\n'
         return results
 
-    except Exception as e:
-        return SearchResultsError(f'{e.__name__}: {e}')
+    except:
+        return SearchResultsError(traceback.format_exc(), debug_info)
 
 if __name__ == '__main__':
     # TEST
