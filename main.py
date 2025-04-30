@@ -83,6 +83,8 @@ FACETS: list[list[str]] = [
     ['mod', 'resourcepack', 'rp', 'datapack', 'dp', 'modpack', 'mp', 'plugin', 'shader'],
     LOADERS,
     ['server', 'client', 'serverside', 'clientside', 'serversupported', 'clientsupported'],
+    ['v'],
+    ['t']
 ]
 
 # CLASS & FUNCTION DEFINITIONS
@@ -96,6 +98,15 @@ def truncate(text: str, width: int = 20, add_whitespace: bool = True) -> str:
 
 def capitalize(text: str) -> str:
     return text[0].upper() + text[1:]
+
+def get_facet_index(search_filter: str) -> int:
+    for i in range(len(FACETS)):
+        facet: list[str] = FACETS[i]
+        if search_filter[1:] in facet:
+            return i
+        if search_filter[1] in facet: # special attributes only check for first letter
+            return i
+    raise ValueError(f'Internal Error: Invalid search filter "{search_filter}"!')
 
 class Project:
     def __init__(self, project_id: str, slug: str, project_type: str, name: str, author: str, description: str,
@@ -184,15 +195,38 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
         filters: list[str] = list(filter(lambda word: word.startswith('+') or word.startswith('-'), words))
         search_term: str = ' '.join(list(filter(lambda word: word not in filters, words)))
 
-        # Parse search filters from query
-        facets: list[list[str]] = []
-        # TODO
+        # Parse search filters (see "facets" parameter in Modrinth API docs for more info: https://docs.modrinth.com/api/operations/searchprojects/)
+        facets_formatted: list[list[str]] = []
+        for _ in range(len(FACETS)):
+            facets_formatted.append([]) # Start with an empty OR expression for each facet
+
+        for search_filter in filters: # For each search filter
+            if search_filter in ATTRIBUTES: # If it is a normal attribute
+                attribute_formatted: str = ATTRIBUTES[search_filter] # Find the formatted version of the attribute
+
+            else:
+                for special_attribute in SPECIAL_ATTRIBUTES:
+                    if search_filter.startswith(special_attribute): # If it is a special attribute
+                        attribute_formatted: str = SPECIAL_ATTRIBUTES[special_attribute](search_filter[2:]) # Apply special attribute function to find formatted version of the attribute
+                        break
+
+                else: # If it is not a valid attribute
+                    return SearchResultsError(f'Invalid search filter "{search_filter}"!\n')
+
+            # At this point, the attribute is valid and the formatted version has been found.
+            facet_index: int = get_facet_index(search_filter) # Find the facet that the attribute belongs to
+            if search_filter.startswith('+'):  # If it is a positive attribute
+                facets_formatted[facet_index].append(attribute_formatted) # OR it with the other positive attributes of its facet
+            else: # If it is a negative attribute
+                facets_formatted.append([attribute_formatted]) # AND it with everything else
+
+        facets_formatted = list(filter(lambda facet_formatted: len(facet_formatted) > 0, facets_formatted)) # Remove empty facets
 
         # Format URL
         offset: int = page_number * PAGE_SIZE
         params: dict[str, str] = {'query': search_term, 'offset': offset, 'limit': PAGE_SIZE}
-        if len(facets) > 0:
-            params['facets'] = json.dumps(facets)
+        if len(facets_formatted) > 0:
+            params['facets'] = json.dumps(facets_formatted)
 
         # Send request and end timer
         r: requests.Response = requests.get(SEARCH_URL, params=params)
@@ -214,4 +248,4 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 
 if __name__ == '__main__':
     # TEST
-    search('').print()
+    search('sodium options flashyreese +mod').print()
