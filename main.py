@@ -30,6 +30,11 @@ import time
 # The search will return projects that match ANY of the "+" attributes AND NONE of the "-" attributes
 # for EACH FACET.
 #
+# SORTING
+#
+# Add a word starting with "/" to sort with that rule in descending order.
+# Valid rules: "relevance" (default), "downloads", "follows", "newest", "updated"
+#
 # EXAMPLES
 #
 # The filters "+forge +mod +rp -dp -mp -quilt" will return projects that meet the following:
@@ -37,11 +42,11 @@ import time
 # Note that "+mod", "+rp", "-dp", and "-mp" get lumped together because they are all part of the "Project
 # Type" facet. "+forge" and "-quilt" also are in their own "Loader" facet and so get handled separately.
 #
-# The query "trajectory -serversupported +neoforge +mod +v1.21.1" will search for NeoForge mods for 1.21.1
-# that do not support a server version with the word "trajectory".
+# The query "trajectory -serversupported +neoforge +mod +v1.21.1 /follows" will search for NeoForge mods for 1.21.1
+# that do not support a server version with the word "trajectory", and will sort by follows in descending order.
 #
 # The query "teleport +server" will search for projects that support a server-side version with the
-# word "teleport".
+# word "teleport", and will sort by relevance (default).
 
 # CONSTANTS
 
@@ -50,6 +55,7 @@ PAGE_SIZE: int = 20
 LOADERS: list[str] = ['bukkit', 'bungeecord', 'canvas', 'fabric', 'folia', 'forge', 'iris', 'liteloader', 'modloader',
                       'neoforge', 'optifine', 'paper', 'purpur', 'quilt', 'rift', 'spigot', 'sponge', 'vanilla', # "vanilla" is for shaders
                       'velocity', 'waterfall']
+SORTING_RULES: list[str] = ['relevance', 'downloads', 'follows', 'newest', 'updated']
 ATTRIBUTES: dict[str, str] = {
     '+mod': 'project_type:mod',
     '+resourcepack': 'project_type:resourcepack',
@@ -193,7 +199,17 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
         # Separate search term from filters
         words: list[str] = query.split(' ')
         filters: list[str] = list(filter(lambda word: word.startswith('+') or word.startswith('-'), words))
-        search_term: str = ' '.join(list(filter(lambda word: word not in filters, words)))
+        sorting_rules: list[str] = list(filter(lambda word: word.startswith('/'), words))
+        search_term: str = ' '.join(list(filter(lambda word: (word not in filters) and (word not in sorting_rules), words)))
+
+        # Parse sorting rule (if any)
+        if len(sorting_rules) > 1:
+            return SearchResultsError('More than 1 sorting rule found!\n')
+        sorting_rule: str | None = None
+        if len(sorting_rules) > 0:
+            sorting_rule = sorting_rules[0][1:]
+            if sorting_rule not in SORTING_RULES:
+                return SearchResultsError(f'Invalid sorting rule "{sorting_rule}"!\nValid rules: {", ".join(SORTING_RULES)}\n')
 
         # Parse search filters (see "facets" parameter in Modrinth API docs for more info: https://docs.modrinth.com/api/operations/searchprojects/)
         facets_formatted: list[list[str]] = []
@@ -225,6 +241,8 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
         # Format URL
         offset: int = page_number * PAGE_SIZE
         params: dict[str, str] = {'query': search_term, 'offset': offset, 'limit': PAGE_SIZE}
+        if sorting_rule is not None:
+            params['index'] = sorting_rule
         if len(facets_formatted) > 0:
             params['facets'] = json.dumps(facets_formatted)
 
@@ -233,6 +251,10 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
         end_time: float = time.time()
         response_time: float = end_time - start_time
         data: dict = r.json()
+
+        # Check for error response
+        if 'error' in data:
+            return SearchResultsError(f'Error on server:\n{data["error"]}: {data["description"]}\n')
 
         # Return results
         projects: list[Project] = [Project.from_json(hit) for hit in data['hits']]
@@ -248,4 +270,4 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 
 if __name__ == '__main__':
     # TEST
-    search('sodium options flashyreese +mod').print()
+    search('sodium options flashyreese +mod /follows').print()

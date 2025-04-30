@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Add constants">
+    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Add search filter functionality">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -96,7 +96,15 @@
       <option name="project" value="LOCAL" />
       <updated>1745940262169</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Add search filter functionality">
+      <option name="closed" value="true" />
+      <created>1746030580149</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1746030580149</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -105,6 +113,7 @@
     <MESSAGE value="Remove debug info" />
     <MESSAGE value="Use requests &quot;params&quot; argument instead of manually constructing URL" />
     <MESSAGE value="Add constants" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add constants" />
+    <MESSAGE value="Add search filter functionality" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add search filter functionality" />
   </component>
 </project>
