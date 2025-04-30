@@ -270,4 +270,4 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 
 if __name__ == '__main__':
     # TEST
-    search('sodium options flashyreese +mod /follows').print()
+    search('+mod +neoforge +v25w14craftmine /follows').print()
