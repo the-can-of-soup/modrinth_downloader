@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 from typing import Callable
 import traceback
 import requests
@@ -116,7 +117,8 @@ def get_facet_index(search_filter: str) -> int:
 
 class Project:
     def __init__(self, project_id: str, slug: str, project_type: str, name: str, author: str, description: str,
-    downloads: int, follows: int, categories: list[str]):
+    downloads: int, follows: int, categories: list[str], mc_versions: list[str], date_created: datetime,
+    date_modified: datetime, project_license: str, client_support: str, server_support: str):
         self.project_id: str = project_id
         self.slug: str = slug
         self.project_type: str = project_type
@@ -126,6 +128,12 @@ class Project:
         self.downloads: int = downloads
         self.follows: int = follows
         self.categories: list[str] = categories
+        self.mc_versions: list[str] = mc_versions
+        self.date_created: datetime = date_created
+        self.date_modified: datetime = date_modified
+        self.project_license: str = project_license
+        self.client_support: str = client_support
+        self.server_support: str = server_support
 
         self.loaders: list[str] = list(filter(lambda category: category in LOADERS, self.categories))
         self.tags: list[str] = list(filter(lambda category: category not in LOADERS, self.categories))
@@ -146,10 +154,33 @@ class Project:
 
         return out
 
+    def print(self) -> None:
+        print(f'{self.name}     ⤓{self.downloads:,} ♥{self.follows:,}')
+        print(f'  by {self.author}')
+        print('')
+        print(self.description)
+        print('')
+        print(f'ID: {self.project_id}')
+        print(f'Slug: {self.slug}')
+        print(f'URL: https://modrinth.com/{self.project_type}/{self.slug}')
+        print(f'Short URL: https://modrinth.com/{self.project_type}/{self.project_id}')
+        print(f'Date Created: {self.date_created.ctime()}')
+        print(f'Date Modified: {self.date_modified.ctime()}')
+        print(f'Project Type: {self.project_type}')
+        print(f'Client support: {self.client_support}')
+        print(f'Server support: {self.server_support}')
+        print(f'License: {self.project_license}')
+        print('')
+        print('Loaders: ' + ' '.join([capitalize(i) for i in self.loaders]))
+        print('Tags: ' + ' '.join([capitalize(i) for i in self.tags]))
+        print('MC Versions: ' + ' '.join(list(reversed(self.mc_versions))[:40]) + ('…' if len(self.mc_versions) > 50 else ''))
+
     @staticmethod
     def from_json(data: dict) -> Project:
         return Project(data['project_id'], data['slug'], data['project_type'], data['title'], data['author'],
-                       data['description'], data['downloads'], data['follows'], data['categories'])
+                       data['description'], data['downloads'], data['follows'], data['categories'], data['versions'],
+                       datetime.fromisoformat(data['date_created']), datetime.fromisoformat(data['date_modified']),
+                       data['license'], data['client_side'], data['server_side'])
 
 class SearchResults:
     def __init__(self, projects: list[Project], page_number: int, page_count: int, total_hits: int, response_time: float):
@@ -270,4 +301,4 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 
 if __name__ == '__main__':
     # TEST
-    search('+mod +neoforge +v25w14craftmine /follows').print()
+    search('simple voice chat +mod +neoforge +v1.21.1 +tsocial /downloads').projects[0].print()

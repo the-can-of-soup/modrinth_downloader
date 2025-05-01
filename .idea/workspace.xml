@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Add search filter functionality">
+    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Change test search">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -104,7 +104,23 @@
       <option name="project" value="LOCAL" />
       <updated>1746030580149</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Add sorting rule functionality">
+      <option name="closed" value="true" />
+      <created>1746031719568</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1746031719568</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Change test search">
+      <option name="closed" value="true" />
+      <created>1746031924358</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1746031924358</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -114,6 +130,8 @@
     <MESSAGE value="Use requests &quot;params&quot; argument instead of manually constructing URL" />
     <MESSAGE value="Add constants" />
     <MESSAGE value="Add search filter functionality" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add search filter functionality" />
+    <MESSAGE value="Add sorting rule functionality" />
+    <MESSAGE value="Change test search" />
+    <option name="LAST_COMMIT_MESSAGE" value="Change test search" />
   </component>
 </project>
