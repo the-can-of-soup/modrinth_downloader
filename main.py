@@ -531,6 +531,7 @@ if __name__ == '__main__':
             print('')
             print('TODO: Add action selector')
             input(' > ') # TODO
+            page = ['results', page[3]]
 
         # Quit
         else:
