@@ -149,8 +149,7 @@ class Project:
         self.tags: list[str] = list(filter(lambda category: category not in LOADERS, self.categories))
 
     def __repr__(self) -> str:
-        out: str = f'Project({repr(self.project_id)}, {repr(self.slug)}, {repr(self.project_type)}, {repr(self.name)}, '
-        out += f'{repr(self.author)}, {repr(self.description)}, {self.downloads}, {self.follows}, {repr(self.categories)})'
+        out: str = f'Project({repr(self.project_id)}, {repr(self.slug)}, {repr(self.project_type)}, {repr(self.name)}, …)'
         return out
 
     def __str__(self) -> str:
@@ -191,6 +190,43 @@ class Project:
                        data['description'], data['downloads'], data['follows'], data['categories'], data['versions'],
                        datetime.fromisoformat(data['date_created']), datetime.fromisoformat(data['date_modified']),
                        data['license'], data['client_side'], data['server_side'])
+
+class Version:
+    def __init__(self, version_id: str, version_type: str, version_number: str, name: str, downloads: int,
+                 mc_versions: list[str], loaders: list[str], files: list[VersionFile], dependencies: list[str]):
+        self.version_id: str = version_id
+        self.version_type: str = version_type
+        self.version_number: str = version_number
+        self.name: str = name
+        self.downloads: int = downloads
+        self.mc_versions: list[str] = mc_versions
+        self.loaders: list[str] = loaders
+        self.files: list[VersionFile] = files
+        self.dependencies: list[str] = dependencies
+
+    def __repr__(self) -> str:
+        return f'Version({repr(self.version_id)}, {repr(self.version_type)}, {repr(self.version_number)}, {repr(self.name)}, …)'
+
+    @staticmethod
+    def from_json(data: dict) -> Version:
+        return Version(data['id'], data['version_type'], data['version_number'], data['name'], data['downloads'],
+                       data['game_versions'], data['loaders'],
+                       [VersionFile.from_json(i) for i in data['files']],
+                       [i['project_id'] for i in data['dependencies'] if i['dependency_type'] == 'required'])
+
+class VersionFile:
+    def __init__(self, url: str, filename: str, size: int, primary: bool):
+        self.url: str = url
+        self.filename: str = filename
+        self.size: int = size
+        self.primary: bool = primary
+
+    def __repr__(self) -> str:
+        return f'VersionFile({repr(self.url)}, {repr(self.filename)}, {repr(self.size)}, {repr(self.primary)}'
+
+    @staticmethod
+    def from_json(data: dict) -> VersionFile:
+        return VersionFile(data['url'], data['filename'], data['size'], data['primary'])
 
 class SearchResults:
     def __init__(self, projects: list[Project], page_number: int, page_count: int, total_hits: int, response_time: float):

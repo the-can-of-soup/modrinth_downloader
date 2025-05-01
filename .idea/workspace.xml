@@ -4,7 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Add print function to projects">
+    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Add check to see if requests is installed">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -127,7 +128,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746057759720</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Add check to see if requests is installed">
+      <option name="closed" value="true" />
+      <created>1746058072339</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1746058072339</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -140,6 +149,7 @@
     <MESSAGE value="Add sorting rule functionality" />
     <MESSAGE value="Change test search" />
     <MESSAGE value="Add print function to projects" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add print function to projects" />
+    <MESSAGE value="Add check to see if requests is installed" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add check to see if requests is installed" />
   </component>
 </project>
