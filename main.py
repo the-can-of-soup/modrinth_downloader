@@ -1,7 +1,9 @@
 from __future__ import annotations
+from typing import Callable, Any
 from datetime import datetime
-from typing import Callable
 import traceback
+import platform
+import shutil
 import json
 import math
 import time
@@ -31,7 +33,7 @@ except ModuleNotFoundError:
 #     Examples: "forge", "fabric", "neoforge", "quilt", "paper", "iris"
 #     NOTE: Loaders cannot be excluded with "-"
 # Platform
-#     "server" OR "serverside", "client" OR "clientside", "serversupported", "clientsupported"
+#     "server", "client", "serversupported", "clientsupported"
 # Version
 #     Use the letter "v" and then the Minecraft version. Examples: "v1.20.1", "v23w14a_or_b"
 #     NOTE: Versions cannot be excluded with "-"
@@ -62,9 +64,11 @@ except ModuleNotFoundError:
 # CONSTANTS
 
 SEARCH_URL: str = 'https://api.modrinth.com/v2/search'
+VERSIONS_URL: str = 'https://api.modrinth.com/v2/project/{project_id}/version'
 PAGE_SIZE: int = 20
+VERSIONS_PAGE_SIZE: int = 15
 LOADERS: list[str] = ['bukkit', 'bungeecord', 'canvas', 'fabric', 'folia', 'forge', 'iris', 'liteloader', 'modloader',
-                      'neoforge', 'optifine', 'paper', 'purpur', 'quilt', 'rift', 'spigot', 'sponge', 'vanilla', # "vanilla" is for shaders
+                      'neoforge', 'optifine', 'paper', 'purpur', 'quilt', 'rift', 'spigot', 'sponge', 'vanilla', # "vanilla" is a loader for shaders
                       'velocity', 'waterfall']
 SORTING_RULES: list[str] = ['relevance', 'downloads', 'follows', 'newest', 'updated']
 ATTRIBUTES: dict[str, str] = {
@@ -82,10 +86,10 @@ ATTRIBUTES: dict[str, str] = {
     '-server': 'client_side:required',
     '+client': 'server_side!=required',
     '-client': 'server_side:required',
-    '+serverside': 'client_side!=required',
-    '-serverside': 'client_side:required',
-    '+clientside': 'server_side!=required',
-    '-clientside': 'server_side:required',
+    # '+serverside': 'client_side!=required',
+    # '-serverside': 'client_side:required',
+    # '+clientside': 'server_side!=required',
+    # '-clientside': 'server_side:required',
     '+serversupported': 'server_side!=unsupported',
     '-serversupported': 'server_side:unsupported',
     '+clientsupported': 'client_side!=unsupported',
@@ -103,6 +107,22 @@ FACETS: list[list[str]] = [
     ['v'],
     ['t']
 ]
+SEARCH_EXPLANATION: str = '''
+------ Search Filters ------
+To add search filters, type a word beginning with "+" in your search term.
+Some filters can also use "-" to search for projects that don't match the filter.
+
+---- Search Filter List ----
+Project Type: +mod, +resourcepack, +rp, +datapack, +dp, +modpack, +mp, +plugin, +shader
+Loader: ''' + ', '.join([f'+{i}' for i in LOADERS]) + '''
+Platform: +/-server, +/-client, +/-serversupported, +/-clientsupported
+Version: +v<version> (Examples: +v1.12.2, +v1.16.5, +v1.21, +v25w14craftmine)
+Tag: +/-t<version> (Examples: +tadventure, +ttechnology, -tcursed, -t32x)
+
+------- Sorting Rule -------
+To change the sorting rule, type a word beginning with "/" in your search term.
+Valid rules: /relevance (default), /downloads, /follows, /newest, /updated
+'''
 
 # CLASS & FUNCTION DEFINITIONS
 
@@ -124,6 +144,12 @@ def get_facet_index(search_filter: str) -> int:
         if search_filter[1] in facet: # special attributes only check for first letter
             return i
     raise ValueError(f'Internal Error: Invalid search filter "{search_filter}"!')
+
+def clear_screen() -> None:
+    if platform.system() == 'Windows':
+        os.system('cls')
+    else:
+        os.system('clear')
 
 class Project:
     def __init__(self, project_id: str, slug: str, project_type: str, name: str, author: str, description: str,
@@ -154,8 +180,8 @@ class Project:
 
     def __str__(self) -> str:
         out: str = f'{truncate(self.project_id, 8)}'
-        out += f' {truncate(capitalize(self.project_type), 12)}' # Project type
         out += f' {truncate(self.name, 30)}' # Name
+        out += f' {truncate(capitalize(self.project_type), 12)}' # Project type
         out += f' {truncate(self.author, 20)}' # Author
         out += f' ⤓{truncate(f"{self.downloads:,}", 11)}' # Downloads
         out += f' ♥{truncate(f"{self.follows:,}", 7)}' # Follows
@@ -229,29 +255,62 @@ class VersionFile:
         return VersionFile(data['url'], data['filename'], data['size'], data['primary'])
 
 class SearchResults:
-    def __init__(self, projects: list[Project], page_number: int, page_count: int, total_hits: int, response_time: float):
+    def __init__(self, projects: list[Project], page_number: int, page_count: int, total_hits: int, response_time: float,
+                 query: str):
         self.projects: list[Project] = projects
         self.page_number: int = page_number
         self.page_count: int = page_count
         self.total_hits: int = total_hits
         self.response_time: float = response_time
+        self.query: str = query
 
     def __repr__(self) -> str:
-        return f'SearchResults([{len(self.projects)} projects], {self.page_number}, {self.page_count}, {self.total_hits}, {self.response_time})'
+        return f'SearchResults([{len(self.projects)} projects], {self.page_number}, {self.page_count}, {self.total_hits}, {self.response_time}, {repr(self.query)})'
 
     def __str__(self) -> str:
         return f'{self.total_hits} results'
 
     def print(self) -> None:
         # Header
-        print('ID       TYPE         NAME                           AUTHOR               DOWNLOADS    FOLLOWS  LOADERS')
+        print(f'Query: "{self.query}"')
+        print('')
+        print('[#]  ID       NAME                           TYPE         AUTHOR               DOWNLOADS    FOLLOWS  LOADERS')
 
         # Body
-        for project in self.projects:
-            print(project)
+        for i in range(len(self.projects)):
+            project: Project = self.projects[i]
+            print(f'{truncate("["+str(i)+"]", 4)} {project}')
 
         # Footer
         print(f'Page {self.page_number+1}/{self.page_count} @ {PAGE_SIZE} items/page - {self.total_hits} results - Fetched in {int(self.response_time*1000):,}ms')
+
+class VersionsSearchResults:
+    def __init__(self, versions: list[Version], page_number: int, page_count: int, total_hits: int, response_time: float,
+                 project: Project):
+        self.versions: list[Version] = versions
+        self.page_number: int = page_number
+        self.page_count: int = page_count
+        self.total_hits: int = total_hits
+        self.response_time: float = response_time
+        self.project: Project = project
+
+    def __repr__(self) -> str:
+        return f'VersionsSearchResults([{len(self.versions)} versions], {self.page_number}, {self.page_count}, {self.total_hits}, {self.response_time}, {repr(self.project)})'
+
+    def __str__(self) -> str:
+        return f'{self.total_hits} versions'
+
+    def print(self) -> None:
+        # Header
+        print('[#]  ID       NAME                           TYPE         AUTHOR               DOWNLOADS    FOLLOWS  LOADERS')
+
+        # Body
+        for i in range(len(self.versions)):
+            version: Version = self.versions[i]
+            print(f'{truncate("["+str(i)+"]", 4)} {version}')
+
+        # Footer
+        print(f'Page {self.page_number+1}/{self.page_count} @ {VERSIONS_PAGE_SIZE} items/page - {self.total_hits} results - Fetched in {int(self.response_time*1000):,}ms')
 
 class SearchResultsError:
     def __init__(self, message: str):
@@ -315,7 +374,7 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 
         facets_formatted = list(filter(lambda facet_formatted: len(facet_formatted) > 0, facets_formatted)) # Remove empty facets
 
-        # Format URL
+        # Format URL parameters
         offset: int = page_number * PAGE_SIZE
         params: dict[str, str] = {'query': search_term, 'offset': offset, 'limit': PAGE_SIZE}
         if sorting_rule is not None:
@@ -336,9 +395,31 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
         # Return results
         projects: list[Project] = [Project.from_json(hit) for hit in data['hits']]
         total_hits: int = data['total_hits']
-        page_count: int = math.ceil(total_hits / PAGE_SIZE)
-        results: SearchResults = SearchResults(projects, page_number, page_count, total_hits, response_time)
+        page_count: int = max(1, math.ceil(total_hits / PAGE_SIZE))
+        results: SearchResults = SearchResults(projects, page_number, page_count, total_hits, response_time, query)
         return results
+
+    except:
+        return SearchResultsError(traceback.format_exc())
+
+def get_versions(project: Project) -> VersionsSearchResults | SearchResultsError:
+    # noinspection PyBroadException
+    try:
+        # Start timer
+        start_time: float = time.time()
+
+        # Send request and end timer
+        r: requests.Response = requests.get(VERSIONS_URL.format(project_id=project.project_id))
+        end_time: float = time.time()
+        response_time: float = end_time - start_time
+        data: list = r.json()
+
+        # Return results
+        versions: list[Version] = list(map(Version.from_json, data))
+        total_hits: int = len(versions)
+        page_count: int = max(1, math.ceil(total_hits / VERSIONS_PAGE_SIZE))
+        versions_results: VersionsSearchResults = VersionsSearchResults(versions, 0, page_count, total_hits, response_time, project)
+        return versions_results
 
     except:
         return SearchResultsError(traceback.format_exc())
@@ -346,4 +427,121 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 # MAIN
 
 if __name__ == '__main__':
-    ...
+    # Page types:
+    # ['search']
+    # ['results', <SearchResults object>]
+    # ['error', <SearchResultsError object>, <page to return to>]
+    # ['project', <Project object>, <VersionsSearchResults object>, <SearchResults object>]
+    # ['quit']
+    page: list[Any] = ['search']
+
+    # Mainloop
+    while True:
+        clear_screen()
+        print('MODRINTH DOWNLOADER')
+        print('-'*30)
+        print('')
+        terminal_size: os.terminal_size = shutil.get_terminal_size()
+
+        new_search: tuple[str, int] | None = None
+
+        # Search page
+        if page[0] == 'search':
+            print('SEARCH')
+            print(SEARCH_EXPLANATION)
+            print('')
+            if terminal_size.columns < 140 or terminal_size.lines < 40:
+                print(f'! WARNING: A terminal size of at least 140x40 is recommended. Current size: {terminal_size.columns}x{terminal_size.lines}')
+                print('')
+            print('Enter search term (or "Q" to quit).')
+            query: str = input(' > ')
+            if query.lower() == 'q':
+                page = ['quit']
+            else:
+                print('')
+                new_search = (query, 0)
+
+        # Results page
+        elif page[0] == 'results':
+            print('SEARCH RESULTS')
+            print('')
+            page[1].print()
+            print('')
+            print('Enter a number to view/download that project number.')
+            print('Enter "<" or ">" to change page, or "p<number>" to jump to a page.')
+            print('Enter "Q" to go back to search.')
+            action = input(' > ')
+            print('')
+
+            # Quit
+            if action.lower() == 'q':
+                page = ['search']
+
+            # Previous page
+            elif action == '<':
+                new_search = (page[1].query, (page[1].page_number - 1) % page[1].page_count)
+
+            # Next page
+            elif action == '>':
+                new_search = (page[1].query, (page[1].page_number + 1) % page[1].page_count)
+
+            # Jump to page
+            elif action.lower().startswith('p'):
+                try:
+                    page_number: int = int(action[1:])
+                except ValueError:
+                    page = ['error', SearchResultsError(f'Invalid action "{action}"!\n'), page]
+                else:
+                    new_search = (page[1].query, (page_number - 1) % page[1].page_count)
+
+            # View/download project
+            else:
+                try:
+                    project_index: int = int(action)
+                except ValueError:
+                    page = ['error', SearchResultsError(f'Invalid action "{action}"!\n'), page]
+                else:
+                    if project_index < 0 or project_index >= len(page[1].projects):
+                        page = ['error', SearchResultsError(f'Project index "{action}" out of bounds!\n'), page]
+                    else:
+                        project: Project = page[1].projects[project_index]
+                        print('Getting versions...')
+                        versions_results: VersionsSearchResults | SearchResultsError = get_versions(project)
+                        if isinstance(versions_results, VersionsSearchResults):
+                            page = ['project', project, versions_results, page[1]]
+                        else:
+                            page = ['error', versions_results, page]
+
+        # Error page
+        elif page[0] == 'error':
+            page[1].print()
+            print('')
+            input('Press ENTER to go back.')
+            page = page[2]
+
+        # Project page
+        elif page[0] == 'project':
+            print('PROJECT')
+            print('')
+            page[1].print()
+            print('')
+            print('VERSIONS')
+            print('')
+            print('TODO: Add versions list')
+            print('')
+            print('TODO: Add action selector')
+            input(' > ') # TODO
+
+        # Quit
+        else:
+            print('Goodbye')
+            sys.exit()
+
+        # Perform search
+        if new_search is not None:
+            print('Searching...')
+            results: SearchResults | SearchResultsError = search(*new_search)
+            if isinstance(results, SearchResults):
+                page = ['results', results]
+            else:
+                page = ['error', results, ['search']]
