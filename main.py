@@ -2,10 +2,20 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Callable
 import traceback
-import requests
 import json
 import math
 import time
+import sys
+import os
+
+try:
+    import requests
+except ModuleNotFoundError:
+    print('REQUESTS MODULE NOT FOUND')
+    print('Please run "python.exe -m pip install requests" to fix this.')
+    print('')
+    input('Press ENTER to quit.')
+    sys.exit()
 
 # QUERY FORMAT
 #
@@ -300,5 +310,4 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
 # MAIN
 
 if __name__ == '__main__':
-    # TEST
-    search('simple voice chat +mod +neoforge +v1.21.1 +tsocial /downloads').projects[0].print()
+    ...
