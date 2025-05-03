@@ -123,7 +123,7 @@ Project Type: +mod, +resourcepack, +rp, +datapack, +dp, +modpack, +mp, +plugin, 
 Loader: ''' + ', '.join([f'+{i}' for i in LOADERS]) + '''
 Platform: +/-server, +/-client, +/-serversupported, +/-clientsupported
 Version: +v<version> (Examples: +v1.12.2, +v1.16.5, +v1.21, +v25w14craftmine)
-Tag: +/-t<version> (Examples: +tadventure, +ttechnology, -tcursed, -t32x)
+Tag: +/-t<tag> (Examples: +tadventure, +ttechnology, -tcursed, -t32x)
 
 ------- Sorting Rule -------
 To change the sorting rule, type a word beginning with "/" in your search term.
