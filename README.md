@@ -15,9 +15,9 @@ A lightweight, standalone Python program for downloading projects from [Modrinth
   `Fresh Animations +resourcepack`
 
 ### Search Filters
-* To add a search filter, type a keyword beginning with `+` in your search term. If there are multiple, projects that match ANY of these will be shown.\
+* To add a search filter, type a keyword beginning with `+` in your search term.\
   `your search term +your_search_filter +another_filter`
-* Some filters can also use `-` to search for projects that don't match the filter. If there are multiple, projects that match NONE of these will be shown.\
+* Some filters can also use `-` to search for projects that don't match the filter. If there are multiple, only projects that match NONE of these will be shown.\
   `your search term -dont_include_this -dont_include_this_either`
 
 ### Search Filter List
