@@ -645,14 +645,19 @@ if __name__ == '__main__':
                 for version in page[2].versions:
                     matches_version: bool = True
                     matches_loader: bool = True
+                    # Check if MC version filter matches
                     if version_filter is not None:
                         if version_filter not in version.mc_versions:
                             matches_version = False
+                    # Check if loader filter matches
                     if loader_filter is not None:
                         if loader_filter not in version.loaders:
                             matches_loader = False
+                    # Choose this version if both filters match and an equal or higher level has not already been found
                     if matches_version and matches_loader:
-                        if version.version_level > match.version_level:
+                        if match is None:
+                            match = version
+                        elif version.version_level > match.version_level:
                             match = version
                 if match is None:
                     page = ['message', f'No versions matching "{action}" were found.', page]
