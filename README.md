@@ -26,7 +26,7 @@ A lightweight, standalone Python program for downloading projects from [Modrinth
 * Platform: `+/-server`, `+/-client`, `+/-serversupported`, `+/-clientsupported`\
   `server` and `client` mean there is a server-side or client-side only version available, while `serversupported` and `clientsupported` mean that the server or client is supported respectively. 
 * Version: `+v<version>` (Examples: `+v1.12.2`, `+v1.16.5`, `+v1.21`, `+v25w14craftmine`)
-* Tag: `+/-t<version>` (Examples: `+tadventure`, `+ttechnology`, `-tcursed`, `-t32x`)
+* Tag: `+/-t<tag>` (Examples: `+tadventure`, `+ttechnology`, `-tcursed`, `-t32x`)
 
 ### Sorting Rule
 * To change the sorting rule, type a word beginning with "/" in your search term.
