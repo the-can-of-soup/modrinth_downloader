@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Add temporary backout code for project UI page">
+    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -22,6 +22,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
@@ -160,7 +163,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746066996028</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Add almost all of UI">
+      <option name="closed" value="true" />
+      <created>1746239979052</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1746239979052</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -177,6 +188,7 @@
     <MESSAGE value="Add version classes" />
     <MESSAGE value="Add most of UI" />
     <MESSAGE value="Add temporary backout code for project UI page" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add temporary backout code for project UI page" />
+    <MESSAGE value="Add almost all of UI" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add almost all of UI" />
   </component>
 </project>

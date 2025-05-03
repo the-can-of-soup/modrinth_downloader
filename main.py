@@ -10,6 +10,8 @@ import time
 import sys
 import os
 
+# TODO: Add .gitignore and add ".idea" and "downloads" folders to it
+
 try:
     import requests
 except ModuleNotFoundError:
@@ -68,6 +70,9 @@ VERSIONS_URL: str = 'https://api.modrinth.com/v2/project/{project_id}/version'
 PAGE_SIZE: int = 20
 VERSIONS_PAGE_SIZE: int = 15
 RECOMMENDED_TERMINAL_SIZE: tuple[int, int] = (140, 40)
+OUTPUT_DIRECTORY: str = 'downloads'
+LOADING_ANIMATION: list[str] = ['-', '\\', '|', '/']
+
 LOADERS: list[str] = ['bukkit', 'bungeecord', 'canvas', 'fabric', 'folia', 'forge', 'iris', 'liteloader', 'modloader',
                       'neoforge', 'optifine', 'paper', 'purpur', 'quilt', 'rift', 'spigot', 'sponge', 'vanilla', # "vanilla" is a loader for shaders
                       'velocity', 'waterfall']
@@ -158,7 +163,7 @@ def format_file_size(size: int) -> str:
     for i in range(len(units)):
         if size < units[i] * 1024:
             return f'{size/units[i]:.2f} {unit_names[i]}'
-    return f'{size/(units[-1] * 1024):.2f} {unit_names[-1]}'
+    return f'{size//units[-1]:,} {unit_names[-1]}'
 
 class Project:
     def __init__(self, project_id: str, slug: str, project_type: str, name: str, author: str, description: str,
@@ -220,17 +225,19 @@ class Project:
 
 class Version:
     def __init__(self, version_id: str, version_type: str, version_number: str, name: str, downloads: int,
-                 mc_versions: list[str], loaders: list[str], files: list[VersionFile], dependencies: list[str],
+                 mc_versions: list[str], loaders: list[str], files: list[VersionFile], dependency_ids: list[str],
                  project_id: str):
         self.version_id: str = version_id
         self.version_type: str = version_type
+        self.version_level: int = {'alpha': 0, 'beta': 1, 'release': 2}[version_type]
         self.version_number: str = version_number
         self.name: str = name
         self.downloads: int = downloads
         self.mc_versions: list[str] = mc_versions
         self.loaders: list[str] = loaders
         self.files: list[VersionFile] = files
-        self.dependencies: list[str] = dependencies
+        self.dependency_ids: list[str] = dependency_ids
+        self.dependencies: list[Project] | None = None # call get_dependency_info to get this value
         self.project_id: str = project_id
 
         # Move primary file to start of file list
@@ -248,7 +255,7 @@ class Version:
     def __repr__(self) -> str:
         return f'Version({repr(self.version_id)}, {repr(self.version_type)}, {repr(self.version_number)}, {repr(self.name)}, …)'
 
-    def __str__(self):
+    def __str__(self) -> str:
         out: str = truncate(self.version_id, 8) # Version ID
         out += f' {truncate(self.version_type, 7)}' # Version type
         out += f' {truncate(self.version_number, 30)}' # Version number
@@ -258,6 +265,16 @@ class Version:
         out += f' {truncate(' '.join([capitalize(i) for i in self.loaders]), 40, False)}' # Loaders
 
         return out
+
+    def get_dependency_info(self) -> list[Project]:
+        self.dependencies = []
+        for dependency_id in self.dependency_ids:
+            facets_param: list[list[str]] = [[f'project_id:{dependency_id}']]
+            r: requests.Response = requests.get(SEARCH_URL, params={'facets': json.dumps(facets_param)})
+            r.raise_for_status()
+            data: dict = r.json()
+            self.dependencies.append(Project.from_json(data['hits'][0]))
+        return self.dependencies
 
     @staticmethod
     def from_json(data: dict) -> Version:
@@ -270,7 +287,7 @@ class Version:
 class VersionFile:
     def __init__(self, url: str, filename: str, size: int, primary: bool):
         self.url: str = url
-        self.filename: str = filename
+        self.filename: str = os.path.split(filename)[-1]
         self.size: int = size
         self.primary: bool = primary
 
@@ -361,7 +378,7 @@ class SearchResultsError:
         return f'Search error: {self.message}'
 
     def print(self) -> None:
-        print(f'ERROR DURING SEARCH:\n')
+        print(f'AN ERROR OCCURRED:\n')
         print(f'{"="*40}\n{self.message}{"="*40}')
 
 def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResultsError:
@@ -429,6 +446,7 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
         # Check for error response
         if 'error' in data:
             return SearchResultsError(f'Error on server:\n{data["error"]}: {data["description"]}\n')
+        r.raise_for_status()
 
         # Return results
         projects: list[Project] = [Project.from_json(hit) for hit in data['hits']]
@@ -448,6 +466,7 @@ def get_versions(project: Project) -> VersionsSearchResults | SearchResultsError
 
         # Send request and end timer
         r: requests.Response = requests.get(VERSIONS_URL.format(project_id=project.project_id))
+        r.raise_for_status()
         end_time: float = time.time()
         response_time: float = end_time - start_time
         data: list = r.json()
@@ -471,7 +490,7 @@ if __name__ == '__main__':
     # ['error', <SearchResultsError object>, <page to return to>]
     # ['message', <text>]
     # ['project', <Project object>, <VersionsSearchResults object>, <SearchResults object>]
-    # ['version', <Version object>, <page to return to>]
+    # ['version', <Version object>, <page to return to>, <project slug>]
     # ['quit']
     page: list[Any] = ['search']
 
@@ -635,12 +654,12 @@ if __name__ == '__main__':
                         if loader_filter not in version.loaders:
                             matches_loader = False
                     if matches_version and matches_loader:
-                        match = version
-                        break
+                        if version.version_level > match.version_level:
+                            match = version
                 if match is None:
                     page = ['message', f'No versions matching "{action}" were found.', page]
                 else:
-                    page = ['version', match, page]
+                    page = ['version', match, page, page[1].slug]
 
             # Download version by index
             else:
@@ -653,15 +672,28 @@ if __name__ == '__main__':
                         page = ['error', SearchResultsError(f'Version index "{action}" out of bounds!\n'), page]
                     else:
                         version: Version = page[2].versions[page[2].start_index() + version_index]
-                        page = ['version', version, page]
+                        page = ['version', version, page, page[1].slug]
 
         # Version page (download page)
         elif page[0] == 'version':
             print('DOWNLOAD')
             print('')
+            print(f'Type: {page[1].version_type}')
+            print(f'Version: {page[1].version_number}')
             print(f'Version ID: {page[1].version_id}')
             print(f'Project ID: {page[1].project_id}')
             print(f'URL: https://modrinth.com/mod/{page[1].project_id}/version/{page[1].version_id}')
+            if len(page[1].dependency_ids) == 0:
+                print('Dependencies: none')
+            else:
+                print('Dependencies: loading...', end='\r')
+                # noinspection PyBroadException
+                try:
+                    page[1].get_dependency_info()
+                except:
+                    page = ['error', SearchResultsError(traceback.format_exc()), page[2]]
+                    continue # skips to error screen
+                print('Dependencies: ' + ', '.join([f'"{i.name}" ({i.project_id})' for i in page[1].dependencies]))
             print('')
             print('FILES')
             print('')
@@ -671,7 +703,8 @@ if __name__ == '__main__':
                 primary_star: str = '*' if file.primary else ' '
                 print(f'{primary_star} {truncate(file.filename, 50)} {format_file_size(file.size)}')
                 total_size += file.size
-            print(f'  TOTAL                                              {format_file_size(total_size)}')
+            print('')
+            print(f'Total size: {format_file_size(total_size)}')
             print('')
             print('Enter nothing to download the primary file.')
             print('Enter "A" to download all files.')
@@ -679,13 +712,71 @@ if __name__ == '__main__':
             action: str = input(' > ')
             print('')
 
+            directory: str = os.path.join(OUTPUT_DIRECTORY, page[3]) # downloads/<project slug>
+            warnings: str = ''
+            if len(page[1].dependency_ids) > 0:
+                warnings += '! THIS PROJECT HAS DEPENDENCIES! Make sure you get those as well.\n'
+            if page[1].version_type == 'beta':
+                warnings += '! THIS VERSION IS IN BETA!\n'
+            if page[1].version_type == 'alpha':
+                warnings += '! THIS VERSION IS IN ALPHA!\n'
+            if warnings != '':
+                warnings += '\n'
+
             # Download primary file
             if action == '':
-                ... # TODO
+                # noinspection PyBroadException
+                try:
+                    os.makedirs(directory, exist_ok=True)
+                    local_filename: str = os.path.join(directory, page[1].primary_file.filename)
+                    print('Downloading... ', end='\r')
+                    loading_animation_frame: int = 0
+                    downloaded_bytes: int = 0
+                    with requests.get(page[1].primary_file.url, stream=True) as r:
+                        r.raise_for_status()
+                        with open(local_filename, 'wb') as f:
+                            for chunk in r.iter_content(chunk_size=8192):
+                                print(f'Downloading... {LOADING_ANIMATION[loading_animation_frame]} {format_file_size(downloaded_bytes)}/{format_file_size(page[1].primary_file.size)}     ', end='\r')
+                                f.write(chunk)
+                                downloaded_bytes += 8192
+                                loading_animation_frame = (loading_animation_frame + 1) % len(LOADING_ANIMATION)
+                    print('Downloading... done                                        ')
+                    print(f'Saved to "{local_filename}".')
+                    print('')
+                    print(warnings, end='')
+                    input('Press ENTER to go back.')
+                    page = page[2]
+
+                except:
+                    page = ['error', SearchResultsError(traceback.format_exc()), page[2]]
 
             # Download all files
-            elif action == '':
-                ... # TODO
+            elif action.lower() == 'a':
+                # noinspection PyBroadException
+                try:
+                    os.makedirs(directory, exist_ok=True)
+                    print('Downloading... ', end='\r')
+                    loading_animation_frame: int = 0
+                    downloaded_bytes: int = 0
+                    for file in page[1].files:
+                        local_filename: str = os.path.join(directory, file.filename)
+                        with requests.get(page[1].primary_file.url, stream=True) as r:
+                            r.raise_for_status()
+                            with open(local_filename, 'wb') as f:
+                                for chunk in r.iter_content(chunk_size=8192):
+                                    print(f'Downloading... {LOADING_ANIMATION[loading_animation_frame]} {format_file_size(downloaded_bytes)}/{format_file_size(total_size)}     ', end='\r')
+                                    f.write(chunk)
+                                    downloaded_bytes += 8192
+                                    loading_animation_frame = (loading_animation_frame + 1) % len(LOADING_ANIMATION)
+                    print('Downloading... done                                        ')
+                    print(f'Saved files to "{directory}".')
+                    print('')
+                    print(warnings, end='')
+                    input('Press ENTER to go back.')
+                    page = page[2]
+
+                except:
+                    page = ['error', SearchResultsError(traceback.format_exc()), page[2]]
 
             # Quit
             else:
