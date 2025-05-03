@@ -10,8 +10,6 @@ import time
 import sys
 import os
 
-# TODO: Add .gitignore and add ".idea" and "downloads" folders to it
-
 try:
     import requests
 except ModuleNotFoundError:
