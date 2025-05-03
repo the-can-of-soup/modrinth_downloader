@@ -67,6 +67,7 @@ SEARCH_URL: str = 'https://api.modrinth.com/v2/search'
 VERSIONS_URL: str = 'https://api.modrinth.com/v2/project/{project_id}/version'
 PAGE_SIZE: int = 20
 VERSIONS_PAGE_SIZE: int = 15
+RECOMMENDED_TERMINAL_SIZE: tuple[int, int] = (140, 40)
 LOADERS: list[str] = ['bukkit', 'bungeecord', 'canvas', 'fabric', 'folia', 'forge', 'iris', 'liteloader', 'modloader',
                       'neoforge', 'optifine', 'paper', 'purpur', 'quilt', 'rift', 'spigot', 'sponge', 'vanilla', # "vanilla" is a loader for shaders
                       'velocity', 'waterfall']
@@ -151,6 +152,14 @@ def clear_screen() -> None:
     else:
         os.system('clear')
 
+def format_file_size(size: int) -> str:
+    units: list[int] = [1024 ** i for i in range(5)]
+    unit_names: list[str] = ['B', 'KiB', 'MiB', 'GiB', 'TiB']
+    for i in range(len(units)):
+        if size < units[i] * 1024:
+            return f'{size/units[i]:.2f} {unit_names[i]}'
+    return f'{size/(units[-1] * 1024):.2f} {unit_names[-1]}'
+
 class Project:
     def __init__(self, project_id: str, slug: str, project_type: str, name: str, author: str, description: str,
     downloads: int, follows: int, categories: list[str], mc_versions: list[str], date_created: datetime,
@@ -179,7 +188,7 @@ class Project:
         return out
 
     def __str__(self) -> str:
-        out: str = f'{truncate(self.project_id, 8)}'
+        out: str = truncate(self.project_id, 8) # Project ID
         out += f' {truncate(self.name, 30)}' # Name
         out += f' {truncate(capitalize(self.project_type), 12)}' # Project type
         out += f' {truncate(self.author, 20)}' # Author
@@ -190,25 +199,17 @@ class Project:
         return out
 
     def print(self) -> None:
-        print(f'{self.name}     ⤓{self.downloads:,} ♥{self.follows:,}')
-        print(f'  by {self.author}')
-        print('')
+        print(f'"{self.name}" ({self.project_type}) by {self.author}    ⤓{self.downloads:,} ♥{self.follows:,}')
         print(self.description)
         print('')
-        print(f'ID: {self.project_id}')
-        print(f'Slug: {self.slug}')
-        print(f'URL: https://modrinth.com/{self.project_type}/{self.slug}')
-        print(f'Short URL: https://modrinth.com/{self.project_type}/{self.project_id}')
-        print(f'Date Created: {self.date_created.ctime()}')
-        print(f'Date Modified: {self.date_modified.ctime()}')
-        print(f'Project Type: {self.project_type}')
-        print(f'Client support: {self.client_support}')
-        print(f'Server support: {self.server_support}')
+        print(f'ID, Slug: {self.project_id}, {self.slug}')
+        print(f'URL: https://modrinth.com/{self.project_type}/{self.project_id}')
+        print(f'Date Created, Modified: {self.date_created.ctime()}, {self.date_modified.ctime()}')
+        print(f'Client, Server Support: {self.client_support}, {self.server_support}')
         print(f'License: {self.project_license}')
-        print('')
         print('Loaders: ' + ' '.join([capitalize(i) for i in self.loaders]))
         print('Tags: ' + ' '.join([capitalize(i) for i in self.tags]))
-        print('MC Versions: ' + ' '.join(list(reversed(self.mc_versions))[:40]) + ('…' if len(self.mc_versions) > 50 else ''))
+        print('MC Versions: ' + ' '.join(list(reversed(self.mc_versions))[:10]) + ('…' if len(self.mc_versions) > 10 else ''))
 
     @staticmethod
     def from_json(data: dict) -> Project:
@@ -219,7 +220,8 @@ class Project:
 
 class Version:
     def __init__(self, version_id: str, version_type: str, version_number: str, name: str, downloads: int,
-                 mc_versions: list[str], loaders: list[str], files: list[VersionFile], dependencies: list[str]):
+                 mc_versions: list[str], loaders: list[str], files: list[VersionFile], dependencies: list[str],
+                 project_id: str):
         self.version_id: str = version_id
         self.version_type: str = version_type
         self.version_number: str = version_number
@@ -229,16 +231,41 @@ class Version:
         self.loaders: list[str] = loaders
         self.files: list[VersionFile] = files
         self.dependencies: list[str] = dependencies
+        self.project_id: str = project_id
+
+        # Move primary file to start of file list
+        primary_file_index: int = 0
+        for i in range(len(self.files)):
+            if self.files[i].primary:
+                primary_file_index = i
+                break
+
+        if primary_file_index != 0:
+            self.files[0], self.files[primary_file_index] = self.files[primary_file_index], self.files[0]
+
+        self.primary_file: VersionFile = self.files[0]
 
     def __repr__(self) -> str:
         return f'Version({repr(self.version_id)}, {repr(self.version_type)}, {repr(self.version_number)}, {repr(self.name)}, …)'
+
+    def __str__(self):
+        out: str = truncate(self.version_id, 8) # Version ID
+        out += f' {truncate(self.version_type, 7)}' # Version type
+        out += f' {truncate(self.version_number, 30)}' # Version number
+        out += f' {truncate(format_file_size(self.primary_file.size), 11)}'
+        out += f' ⤓{truncate(f"{self.downloads:,}", 10)}' # Downloads
+        out += f' {truncate(' '.join([capitalize(i) for i in self.mc_versions]), 30)}' # MC Versions
+        out += f' {truncate(' '.join([capitalize(i) for i in self.loaders]), 40, False)}' # Loaders
+
+        return out
 
     @staticmethod
     def from_json(data: dict) -> Version:
         return Version(data['id'], data['version_type'], data['version_number'], data['name'], data['downloads'],
                        data['game_versions'], data['loaders'],
                        [VersionFile.from_json(i) for i in data['files']],
-                       [i['project_id'] for i in data['dependencies'] if i['dependency_type'] == 'required'])
+                       [i['project_id'] for i in data['dependencies'] if i['dependency_type'] == 'required'],
+                       data['project_id'])
 
 class VersionFile:
     def __init__(self, url: str, filename: str, size: int, primary: bool):
@@ -249,6 +276,9 @@ class VersionFile:
 
     def __repr__(self) -> str:
         return f'VersionFile({repr(self.url)}, {repr(self.filename)}, {repr(self.size)}, {repr(self.primary)}'
+
+    def __str__(self) -> str:
+        return self.filename
 
     @staticmethod
     def from_json(data: dict) -> VersionFile:
@@ -300,14 +330,22 @@ class VersionsSearchResults:
     def __str__(self) -> str:
         return f'{self.total_hits} versions'
 
+    def start_index(self) -> int:
+        return self.page_number * VERSIONS_PAGE_SIZE
+
+    def end_index(self) -> int:
+        return min(len(self.versions), (self.page_number + 1) * VERSIONS_PAGE_SIZE)
+
     def print(self) -> None:
         # Header
-        print('[#]  ID       NAME                           TYPE         AUTHOR               DOWNLOADS    FOLLOWS  LOADERS')
+        print('[#]  ID       TYPE    VERSION                        SIZE        DOWNLOADS   MC VERSIONS                    LOADERS')
 
         # Body
-        for i in range(len(self.versions)):
+        j: int = 0
+        for i in range(self.start_index(), self.end_index()):
             version: Version = self.versions[i]
-            print(f'{truncate("["+str(i)+"]", 4)} {version}')
+            print(f'{truncate("["+str(j)+"]", 4)} {version}')
+            j += 1
 
         # Footer
         print(f'Page {self.page_number+1}/{self.page_count} @ {VERSIONS_PAGE_SIZE} items/page - {self.total_hits} results - Fetched in {int(self.response_time*1000):,}ms')
@@ -431,7 +469,9 @@ if __name__ == '__main__':
     # ['search']
     # ['results', <SearchResults object>]
     # ['error', <SearchResultsError object>, <page to return to>]
+    # ['message', <text>]
     # ['project', <Project object>, <VersionsSearchResults object>, <SearchResults object>]
+    # ['version', <Version object>, <page to return to>]
     # ['quit']
     page: list[Any] = ['search']
 
@@ -450,8 +490,8 @@ if __name__ == '__main__':
             print('SEARCH')
             print(SEARCH_EXPLANATION)
             print('')
-            if terminal_size.columns < 140 or terminal_size.lines < 40:
-                print(f'! WARNING: A terminal size of at least 140x40 is recommended. Current size: {terminal_size.columns}x{terminal_size.lines}')
+            if terminal_size.columns < RECOMMENDED_TERMINAL_SIZE[0] or terminal_size.lines < RECOMMENDED_TERMINAL_SIZE[1]:
+                print(f'! WARNING: A terminal size of at least {RECOMMENDED_TERMINAL_SIZE[0]}x{RECOMMENDED_TERMINAL_SIZE[1]} is recommended. Current size: {terminal_size.columns}x{terminal_size.lines}')
                 print('')
             print('Enter search term (or "Q" to quit).')
             query: str = input(' > ')
@@ -519,19 +559,137 @@ if __name__ == '__main__':
             input('Press ENTER to go back.')
             page = page[2]
 
+        # Message page (static page)
+        elif page[0] == 'message':
+            print(page[1])
+            print('')
+            input('Press ENTER to go back.')
+            page = page[2]
+
         # Project page
         elif page[0] == 'project':
-            print('PROJECT')
-            print('')
             page[1].print()
             print('')
             print('VERSIONS')
+            page[2].print()
             print('')
-            print('TODO: Add versions list')
+            print('Enter a number to download that version.')
+            print('Enter "<" or ">" to change page, or "p<number>" to jump to a page.')
+            print('Enter something like "v1.21.1", "fabric", or "v1.21.1 fabric" to quick-download the latest matching version.')
+            print('Enter "Q" to go back to search results.')
+            action: str = input(' > ')
+
+            # Check if action is quick download and parse if it is
+            action_is_quick_download: bool = True
+            version_filter: str | None = None
+            loader_filter: str | None = None
+            words: list[str] = action.split(' ')
+            for word in words:
+                if word.lower().startswith('v'):
+                    if version_filter is not None:
+                        action_is_quick_download = False
+                        break
+                    version_filter = word.lower()[1:]
+                elif word.lower() in LOADERS:
+                    if loader_filter is not None:
+                        action_is_quick_download = False
+                        break
+                    loader_filter = word.lower()
+                else:
+                    action_is_quick_download = False
+                    break
+            if version_filter is None and loader_filter is None:
+                action_is_quick_download = False
+
+            # Quit
+            if action.lower() == 'q':
+                page = ['results', page[3]]
+
+            # Previous page
+            elif action == '<':
+                page[2].page_number = (page[2].page_number - 1) % page[2].page_count
+
+            # Next page
+            elif action == '>':
+                page[2].page_number = (page[2].page_number + 1) % page[2].page_count
+
+            # Jump to page
+            elif action.lower().startswith('p'):
+                try:
+                    page_number: int = int(action[1:])
+                except ValueError:
+                    page = ['error', SearchResultsError(f'Invalid action "{action}"!\n'), page]
+                else:
+                    page[2].page_number = (page_number - 1) % page[2].page_count
+
+            # Quick-download version
+            elif action_is_quick_download:
+                match: Version | None = None
+                for version in page[2].versions:
+                    matches_version: bool = True
+                    matches_loader: bool = True
+                    if version_filter is not None:
+                        if version_filter not in version.mc_versions:
+                            matches_version = False
+                    if loader_filter is not None:
+                        if loader_filter not in version.loaders:
+                            matches_loader = False
+                    if matches_version and matches_loader:
+                        match = version
+                        break
+                if match is None:
+                    page = ['message', f'No versions matching "{action}" were found.', page]
+                else:
+                    page = ['version', match, page]
+
+            # Download version by index
+            else:
+                try:
+                    version_index: int = int(action)
+                except ValueError:
+                    page = ['error', SearchResultsError(f'Invalid action "{action}"!\n'), page]
+                else:
+                    if version_index < 0 or version_index >= page[2].end_index() - page[2].start_index():
+                        page = ['error', SearchResultsError(f'Version index "{action}" out of bounds!\n'), page]
+                    else:
+                        version: Version = page[2].versions[page[2].start_index() + version_index]
+                        page = ['version', version, page]
+
+        # Version page (download page)
+        elif page[0] == 'version':
+            print('DOWNLOAD')
             print('')
-            print('TODO: Add action selector')
-            input(' > ') # TODO
-            page = ['results', page[3]]
+            print(f'Version ID: {page[1].version_id}')
+            print(f'Project ID: {page[1].project_id}')
+            print(f'URL: https://modrinth.com/mod/{page[1].project_id}/version/{page[1].version_id}')
+            print('')
+            print('FILES')
+            print('')
+            print('  FILENAME                                           SIZE')
+            total_size: int = 0
+            for file in page[1].files:
+                primary_star: str = '*' if file.primary else ' '
+                print(f'{primary_star} {truncate(file.filename, 50)} {format_file_size(file.size)}')
+                total_size += file.size
+            print(f'  TOTAL                                              {format_file_size(total_size)}')
+            print('')
+            print('Enter nothing to download the primary file.')
+            print('Enter "A" to download all files.')
+            print('Enter "Q" to cancel download.')
+            action: str = input(' > ')
+            print('')
+
+            # Download primary file
+            if action == '':
+                ... # TODO
+
+            # Download all files
+            elif action == '':
+                ... # TODO
+
+            # Quit
+            else:
+                page = page[2]
 
         # Quit
         else:

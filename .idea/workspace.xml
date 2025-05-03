@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Add version classes">
+    <list default="true" id="d7d75773-abac-4212-8eee-b8958ace1dd1" name="Changes" comment="Add temporary backout code for project UI page">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -144,7 +144,23 @@
       <option name="project" value="LOCAL" />
       <updated>1746059867151</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Add most of UI">
+      <option name="closed" value="true" />
+      <created>1746066934156</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1746066934156</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Add temporary backout code for project UI page">
+      <option name="closed" value="true" />
+      <created>1746066996028</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1746066996028</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -159,6 +175,8 @@
     <MESSAGE value="Add print function to projects" />
     <MESSAGE value="Add check to see if requests is installed" />
     <MESSAGE value="Add version classes" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add version classes" />
+    <MESSAGE value="Add most of UI" />
+    <MESSAGE value="Add temporary backout code for project UI page" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add temporary backout code for project UI page" />
   </component>
 </project>
