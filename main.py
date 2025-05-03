@@ -112,8 +112,10 @@ FACETS: list[list[str]] = [
     ['t']
 ]
 SEARCH_EXPLANATION: str = '''
+For a more detailed explanation, go here: https://github.com/the-can-of-soup/modrinth_downloader
+
 ------ Search Filters ------
-To add search filters, type a word beginning with "+" in your search term.
+To add a search filter, type a keyword beginning with "+" in your search term.
 Some filters can also use "-" to search for projects that don't match the filter.
 
 ---- Search Filter List ----
