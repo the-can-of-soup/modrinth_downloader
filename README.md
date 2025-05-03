@@ -23,7 +23,8 @@ A lightweight, standalone Python program for downloading projects from [Modrinth
 ### Search Filter List
 * Project Type: `+mod`, `+resourcepack`, `+rp`, `+datapack`, `+dp`, `+modpack`, `+mp`, `+plugin`, `+shader`
 * Loader: `+bukkit`, `+bungeecord`, `+canvas`, `+fabric`, `+folia`, `+forge`, `+iris`, `+liteloader`, `+modloader`, `+neoforge`, `+optifine`, `+paper`, `+purpur`, `+quilt`, `+rift`, `+spigot`, `+sponge`, `+vanilla`, `+velocity`, `+waterfall`
-* Platform: `+/-server`, `+/-client`, `+/-serversupported`, `+/-clientsupported`
+* Platform: `+/-server`, `+/-client`, `+/-serversupported`, `+/-clientsupported`\
+  `server` and `client` mean there is a server-side or client-side only version available, while `serversupported` and `clientsupported` mean that the server or client is supported respectively. 
 * Version: `+v<version>` (Examples: `+v1.12.2`, `+v1.16.5`, `+v1.21`, `+v25w14craftmine`)
 * Tag: `+/-t<version>` (Examples: `+tadventure`, `+ttechnology`, `-tcursed`, `-t32x`)
 
