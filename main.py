@@ -427,7 +427,13 @@ def search(query: str = '', page_number: int = 0) -> SearchResults | SearchResul
             else: # If it is a negative attribute
                 facets_formatted.append([attribute_formatted]) # AND it with everything else
 
-        facets_formatted = list(filter(lambda facet_formatted: len(facet_formatted) > 0, facets_formatted)) # Remove empty facets
+        # Check if search term is an ID search and add filter if it is
+        if search_term.startswith('#'):
+            facets_formatted.append([f'project_id:{search_term[1:]}'])
+            search_term = ''
+
+        # Remove empty facets
+        facets_formatted = list(filter(lambda facet_formatted: len(facet_formatted) > 0, facets_formatted))
 
         # Format URL parameters
         offset: int = page_number * PAGE_SIZE

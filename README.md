@@ -35,3 +35,9 @@ A lightweight, standalone Python program for downloading projects from [Modrinth
   `physics /follows`\
   `/downloads`\
   `create addon /updated`
+
+### Searching by ID
+* To find a project knowing its ID (an 8-character base62 string), use `#<ID>` as the search term.
+* Examples:\
+  `#WZfuGM1m`\
+  `#zJpHMkdD`
