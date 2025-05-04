@@ -14,7 +14,7 @@ try:
     import requests
 except ModuleNotFoundError:
     print('REQUESTS MODULE NOT FOUND')
-    print('Please run "python.exe -m pip install requests" to fix this.')
+    print('Please run "py -m pip install requests" to fix this.')
     print('')
     input('Press ENTER to quit.')
     sys.exit()
