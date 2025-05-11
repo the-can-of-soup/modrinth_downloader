@@ -1,3 +1,5 @@
+# GitHub: https://github.com/the-can-of-soup/modrinth_downloader
+
 from __future__ import annotations
 from typing import Callable, Any
 from datetime import datetime
