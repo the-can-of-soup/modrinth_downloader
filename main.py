@@ -201,7 +201,7 @@ class Project:
         out += f' {truncate(self.author, 20)}' # Author
         out += f' ⤓{truncate(f"{self.downloads:,}", 11)}' # Downloads
         out += f' ♥{truncate(f"{self.follows:,}", 7)}' # Follows
-        out += f' {truncate(' '.join([capitalize(i) for i in self.loaders]), 50, False)}' # Loaders
+        out += f' {truncate(" ".join([capitalize(i) for i in self.loaders]), 50, False)}' # Loaders
 
         return out
 
@@ -263,8 +263,8 @@ class Version:
         out += f' {truncate(self.version_number, 30)}' # Version number
         out += f' {truncate(format_file_size(self.primary_file.size), 11)}'
         out += f' ⤓{truncate(f"{self.downloads:,}", 10)}' # Downloads
-        out += f' {truncate(' '.join([capitalize(i) for i in self.mc_versions]), 30)}' # MC Versions
-        out += f' {truncate(' '.join([capitalize(i) for i in self.loaders]), 40, False)}' # Loaders
+        out += f' {truncate(" ".join([capitalize(i) for i in self.mc_versions]), 30)}' # MC Versions
+        out += f' {truncate(" ".join([capitalize(i) for i in self.loaders]), 40, False)}' # Loaders
 
         return out
 
