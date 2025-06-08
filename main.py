@@ -228,7 +228,7 @@ class Project:
 class Version:
     def __init__(self, version_id: str, version_type: str, version_number: str, name: str, downloads: int,
                  mc_versions: list[str], loaders: list[str], files: list[VersionFile], dependency_ids: list[str],
-                 project_id: str):
+                 optional_dependency_ids: list[str], project_id: str):
         self.version_id: str = version_id
         self.version_type: str = version_type
         self.version_level: int = {'alpha': 0, 'beta': 1, 'release': 2}[version_type]
@@ -239,7 +239,9 @@ class Version:
         self.loaders: list[str] = loaders
         self.files: list[VersionFile] = files
         self.dependency_ids: list[str] = dependency_ids
+        self.optional_dependency_ids: list[str] = optional_dependency_ids
         self.dependencies: list[Project] | None = None # call get_dependency_info to get this value
+        self.optional_dependencies: list[Project] | None = None # call get_dependency_info to get this value
         self.project_id: str = project_id
 
         # Move primary file to start of file list
@@ -268,7 +270,7 @@ class Version:
 
         return out
 
-    def get_dependency_info(self) -> list[Project]:
+    def get_dependency_info(self) -> tuple[list[Project],list[Project]]:
         self.dependencies = []
         for dependency_id in self.dependency_ids:
             facets_param: list[list[str]] = [[f'project_id:{dependency_id}']]
@@ -276,7 +278,14 @@ class Version:
             r.raise_for_status()
             data: dict = r.json()
             self.dependencies.append(Project.from_json(data['hits'][0]))
-        return self.dependencies
+        self.optional_dependencies = []
+        for dependency_id in self.optional_dependency_ids:
+            facets_param: list[list[str]] = [[f'project_id:{dependency_id}']]
+            r: requests.Response = requests.get(SEARCH_URL, params={'facets': json.dumps(facets_param)})
+            r.raise_for_status()
+            data: dict = r.json()
+            self.optional_dependencies.append(Project.from_json(data['hits'][0]))
+        return self.dependencies, self.optional_dependencies
 
     @staticmethod
     def from_json(data: dict) -> Version:
@@ -284,6 +293,7 @@ class Version:
                        data['game_versions'], data['loaders'],
                        [VersionFile.from_json(i) for i in data['files']],
                        [i['project_id'] for i in data['dependencies'] if i['dependency_type'] == 'required'],
+                       [i['project_id'] for i in data['dependencies'] if i['dependency_type'] == 'optional'],
                        data['project_id'])
 
 class VersionFile:
@@ -696,7 +706,7 @@ if __name__ == '__main__':
             print(f'Version ID: {page[1].version_id}')
             print(f'Project ID: {page[1].project_id}')
             print(f'URL: https://modrinth.com/mod/{page[1].project_id}/version/{page[1].version_id}')
-            if len(page[1].dependency_ids) == 0:
+            if len(page[1].dependency_ids) == 0 and len(page[1].optional_dependency_ids) == 0:
                 print('Dependencies: none')
             else:
                 print('Dependencies: loading...', end='\r')
@@ -706,7 +716,12 @@ if __name__ == '__main__':
                 except:
                     page = ['error', SearchResultsError(traceback.format_exc()), page[2]]
                     continue # skips to error screen
-                print('Dependencies: ' + ', '.join([f'"{i.name}" ({i.project_id})' for i in page[1].dependencies]))
+                if len(page[1].dependency_ids) == 0:
+                    print('Dependencies: none')
+                else:
+                    print('Dependencies: ' + ', '.join([f'"{i.name}" ({i.project_id})' for i in page[1].dependencies]))
+                if len(page[1].optional_dependency_ids) > 0:
+                    print('Optional Dependencies: ' + ', '.join([f'"{i.name}" ({i.project_id})' for i in page[1].optional_dependencies]))
             print('')
             print('FILES')
             print('')
